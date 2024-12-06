@@ -1,12 +1,10 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { createUser, findUserByEmail } = require('../models/userModel');
-const { createLawyer } = require('../models/lawyerModel');  // Import model lawyer
+const { createUser, findUserByEmail } = require('../models/userModel'); // Import fungsi dari model
 
 // Register
 const register = async (req, res) => {
-  const { name, email, password, specialization, ktpa, ratings, experience_years, contact, availability } = req.body;
-
+  const { name, email, password } = req.body;
   try {
     // Hash password sebelum menyimpannya
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -16,23 +14,7 @@ const register = async (req, res) => {
       if (err) {
         return res.status(500).json({ error: true, message: 'Error registering user' });
       }
-
-      // Cek jika email ber-domain @lawyer.com, jika ya, buat juga lawyer
-      if (email.endsWith('@lawyer.com')) {
-        const userId = result.insertId; // Mendapatkan user_id yang baru dimasukkan
-        createLawyer(userId, specialization, ktpa, ratings, experience_years, contact, availability, (err, lawyerResult) => {
-          if (err) {
-            return res.status(500).json({ error: true, message: 'Error registering lawyer' });
-          }
-          return res.status(201).json({
-            error: false,
-            message: 'Lawyer registered successfully',
-            lawyerId: lawyerResult.insertId,  // Return lawyer id
-          });
-        });
-      } else {
-        res.status(201).json({ error: false, message: 'User registered successfully' });
-      }
+      res.status(201).json({ error: false, message: 'User registered successfully' });
     });
   } catch (error) {
     console.error(error);
@@ -43,7 +25,6 @@ const register = async (req, res) => {
 // Login
 const login = async (req, res) => {
   const { email, password } = req.body;
-
   try {
     // Cari user berdasarkan email
     findUserByEmail(email, async (err, user) => {
