@@ -3,13 +3,30 @@ const db = require('../config/db');  // Import koneksi database dari db.js
 
 // Fungsi untuk membuat pengguna baru
 const createUser = (name, email, password, callback) => {
+  // Menyisipkan pengguna baru ke dalam tabel users
   const query = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
   db.query(query, [name, email, password], (err, result) => {
     if (err) {
       console.error('Error inserting user:', err);
       return callback(err);
     }
-    callback(null, result);
+    
+    // Mengecek jika email berdomain @lawyer.com, maka insert ke tabel lawyers
+    if (email.endsWith('@lawyer.com')) {
+      const userId = result.insertId;  // Mengambil user_id yang baru dimasukkan
+      const lawyerQuery = 'INSERT INTO lawyers (user_id, name, specialization, ktpa, ratings, experience_years, contact, availability) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+      const lawyerData = [userId, name, 'Unknown', 'Unknown', 0, 0, email, true];
+      
+      db.query(lawyerQuery, lawyerData, (err, lawyerResult) => {
+        if (err) {
+          console.error('Error inserting into lawyers:', err);
+          return callback(err);
+        }
+        callback(null, result);  // Kembalikan hasil registrasi pengguna
+      });
+    } else {
+      callback(null, result);  // Kembalikan hasil registrasi pengguna tanpa input ke lawyers
+    }
   });
 };
 
