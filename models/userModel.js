@@ -66,4 +66,23 @@ const updateUserProfilePicture = (userId, photoUrl, callback) => {
   });
 };
 
-module.exports = { createUser, findUserByEmail, updateUserProfilePicture };
+// Get User by Email
+const getUserByEmail = (email, callback) => {
+  const query = 'SELECT id, name, email, photoUrl FROM users WHERE email = ?';
+  db.query(query, [email], (err, results) => {
+    if (err) return callback(err, null);
+    callback(null, results[0]);
+  });
+};
+
+// Get Lawyer by Email
+const getLawyerByEmail = (email, callback) => {
+  const query = 'SELECT id, name, email, specialization, photoUrl FROM lawyers WHERE email = ?';
+  db.query(query, [email], (err, results) => {
+    if (err) return callback(err, null);
+    callback(null, results[0]);
+  });
+};
+
+
+module.exports = { createUser, findUserByEmail, updateUserProfilePicture, getUserByEmail, getLawyerByEmail };
