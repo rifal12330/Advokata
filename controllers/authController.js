@@ -125,4 +125,27 @@ const logout = (req, res) => {
   res.json({ error: false, message: 'Logged out successfully' });
 };
 
-module.exports = { register, login, logout, updateProfilePicture, upload };
+
+//get users
+const getUsers = (email, callback) => {
+  const query = 'SELECT id, name, email, photoUrl FROM users WHERE email = ?';
+  pool.query(query, [email], (err, results) => {
+    if (err) {
+      return callback(err, null);
+    }
+    callback(null, results[0]);
+  });
+};
+
+// Fungsi untuk mengambil field tertentu dari tabel lawyers
+const getLawyers = (email, callback) => {
+  const query = 'SELECT lawyer_id, user_id, name, specialization, ktpa, ratings, experience_years, contact, availability FROM lawyers WHERE email = ?';
+  pool.query(query, [email], (err, results) => {
+    if (err) {
+      return callback(err, null);
+    }
+    callback(null, results[0]);
+  });
+};
+
+module.exports = { register, login, logout, updateProfilePicture, upload, getUsers, getLawyers };
