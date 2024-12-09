@@ -10,5 +10,5 @@ router.post('/login', login);
 router.post('/logout', logout);
 router.put('/update-profile-picture', authMiddleware, upload.single('photo'), updateProfilePicture);
 router.get('/getUsers/:email', getUser);
-router.get('/getLawyer:email', getLawyer);
+router.get('/getLawyer/:email', getLawyer);
 module.exports = router;
