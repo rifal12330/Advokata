@@ -125,37 +125,4 @@ const logout = (req, res) => {
   res.json({ error: false, message: 'Logged out successfully' });
 };
 
-// Get User by Email
-const getUser = (req, res) => {
-  const email = req.params.email;
-
-  getUserByEmail(email, (err, user) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: true, message: 'Server error' });
-    }
-    if (!user) {
-      return res.status(404).json({ error: true, message: 'User not found' });
-    }
-    res.status(200).json({ error: false, user });
-  });
-};
-
-// Get Lawyer by Email
-const getLawyer = (req, res) => {
-  const email = req.params.email;
-
-  getLawyerByEmail(email, (err, lawyer) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: true, message: 'Server error' });
-    }
-    if (!lawyer) {
-      return res.status(404).json({ error: true, message: 'Lawyer not found' });
-    }
-    res.status(200).json({ error: false, lawyer });
-  });
-};
-
-
-module.exports = { register, login, logout, updateProfilePicture, upload, getLawyer, getUser };
+module.exports = { register, login, logout, updateProfilePicture, upload };

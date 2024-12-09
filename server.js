@@ -4,6 +4,8 @@ const path = require('path');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const authRoutes = require('./routes/authRoutes');
+const qaRoutes = require('./routes/qa');
+ 
 
 // Menggunakan dotenv untuk memuat variabel lingkungan
 dotenv.config();
@@ -15,6 +17,7 @@ app.use(bodyParser.json());
 
 // Rute untuk otentikasi
 app.use('/api/auth', authRoutes);
+app.use('/api', qaRoutes);
 
 // Rute utama untuk memverifikasi server berjalan
 app.get('/', (req, res) => {
