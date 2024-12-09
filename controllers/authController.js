@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const { createUser, findUserByEmail, updateUserProfilePicture } = require('../models/userModel');
 require('dotenv').config(); // Load environment variables
 
-
 // Initialize Google Cloud Storage
 const storage = new Storage();
 const bucket = storage.bucket(process.env.GCS_BUCKET_NAME);
@@ -25,7 +24,7 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Save new user to the database
-    createUser(name, email, hashedPassword, null, (err, result) => {
+    createUser(name, email, hashedPassword, (err, result) => {
       if (err) {
         return res.status(500).json({ error: true, message: 'Error registering user' });
       }
@@ -37,7 +36,7 @@ const register = async (req, res) => {
   }
 };
 
-// Login function (unchanged)
+// Login function
 const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -121,7 +120,7 @@ const updateProfilePicture = async (req, res) => {
   }
 };
 
-// Logout function (unchanged)
+// Logout function
 const logout = (req, res) => {
   res.json({ error: false, message: 'Logged out successfully' });
 };
