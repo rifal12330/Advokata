@@ -1,8 +1,9 @@
 // authRoutes.js
 const express = require('express');
-const { register, login, logout } = require('../controllers/authController');
+const { register, login, logout, upload, updateProfilePicture } = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware'); // Middleware to verify JWT token
 const router = express.Router();
+
 
 router.post('/register', register);
 router.post('/login', login);

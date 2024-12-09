@@ -1,20 +1,28 @@
+require('dotenv').config();
 const mysql = require('mysql2');
 
-// Membuat koneksi dengan Cloud SQL menggunakan Unix socket
-const connection = mysql.createConnection({
-  user: process.env.DB_USER,                  // Database user
-  password: process.env.DB_PASSWORD,          // Database password
-  database: process.env.DB_NAME,              // Database name
-  socketPath: `/cloudsql/${process.env.CLOUD_SQL_CONNECTION_NAME}`, // Cloud SQL connection path
-});
+const dbConfig = {
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+};
 
-// Memastikan koneksi berhasil
-connection.connect((err) => {
+// Tentukan socketPath jika host adalah socket Cloud SQL
+if (process.env.DB_HOST.includes('/cloudsql/')) {
+  dbConfig.socketPath = process.env.DB_HOST;
+} else {
+  dbConfig.host = process.env.DB_HOST;
+}
+
+const db = mysql.createConnection(dbConfig);
+
+db.connect((err) => {
   if (err) {
-    console.error('Unable to connect to the database:', err.message);
+    console.error('Unable to connect to the database:', err);
     process.exit(1);
+  } else {
+    console.log('Database connected successfully.');
   }
-  console.log('Database connection established successfully');
 });
 
-module.exports = connection;
+module.exports = db;

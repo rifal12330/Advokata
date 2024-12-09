@@ -3,6 +3,8 @@ const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { createUser, findUserByEmail, updateUserProfilePicture } = require('../models/userModel');
+require('dotenv').config(); // Load environment variables
+
 
 // Initialize Google Cloud Storage
 const storage = new Storage();
