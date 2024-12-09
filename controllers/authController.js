@@ -125,27 +125,36 @@ const logout = (req, res) => {
   res.json({ error: false, message: 'Logged out successfully' });
 };
 
+const getUser = (req, res) => {
+  const { email } = req.params;
 
-//get users
-const getUsers = (email, callback) => {
-  const query = 'SELECT id, name, email, photoUrl FROM users WHERE email = ?';
-  pool.query(query, [email], (err, results) => {
+  getUserByEmail(email, (err, user) => {
     if (err) {
-      return callback(err, null);
+      return res.status(500).json({ error: true, message: 'Error retrieving user data' });
     }
-    callback(null, results[0]);
+
+    if (!user) {
+      return res.status(404).json({ error: true, message: 'User not found' });
+    }
+
+    res.status(200).json({ error: false, data: user });
   });
 };
 
-// Fungsi untuk mengambil field tertentu dari tabel lawyers
-const getLawyers = (email, callback) => {
-  const query = 'SELECT lawyer_id, user_id, name, specialization, ktpa, ratings, experience_years, contact, availability FROM lawyers WHERE email = ?';
-  pool.query(query, [email], (err, results) => {
+const getLawyer = (req, res) => {
+  const { email } = req.params;
+
+  getLawyerByEmail(email, (err, lawyer) => {
     if (err) {
-      return callback(err, null);
+      return res.status(500).json({ error: true, message: 'Error retrieving lawyer data' });
     }
-    callback(null, results[0]);
+
+    if (!lawyer) {
+      return res.status(404).json({ error: true, message: 'Lawyer not found' });
+    }
+
+    res.status(200).json({ error: false, data: lawyer });
   });
 };
 
-module.exports = { register, login, logout, updateProfilePicture, upload, getUsers, getLawyers };
+module.exports = { register, login, logout, updateProfilePicture, upload, getUser, getLawyer };

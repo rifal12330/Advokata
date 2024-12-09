@@ -65,4 +65,27 @@ const updateUserProfilePicture = (userId, photoUrl, callback) => {
   });
 };
 
-module.exports = { createUser, findUserByEmail, updateUserProfilePicture };
+
+// Fungsi untuk mengambil user berdasarkan email
+const getUserByEmail = (email, callback) => {
+  const query = 'SELECT id, name, email, photoUrl FROM users WHERE email = ?';
+  pool.query(query, [email], (err, results) => {
+    if (err) {
+      return callback(err, null);
+    }
+    callback(null, results[0]);
+  });
+};
+
+// Fungsi untuk mengambil lawyer berdasarkan email
+const getLawyerByEmail = (email, callback) => {
+  const query = 'SELECT id, name, email, specialization FROM lawyers WHERE email = ?';
+  pool.query(query, [email], (err, results) => {
+    if (err) {
+      return callback(err, null);
+    }
+    callback(null, results[0]);
+  });
+};
+
+module.exports = { createUser, findUserByEmail, updateUserProfilePicture, getUserByEmail, getLawyerByEmail };
