@@ -1,2 +1,5 @@
-# Ignore TensorFlow model binaries
-node_modules/@tensorflow/tfjs-node/deps/lib/libtensorflow.2.7.0.dylib
+# Ignore everything in node_modules
+node_modules/
+
+# But don't ignore this specific TensorFlow file
+!node_modules/@tensorflow/tfjs-node/deps/lib/libtensorflow.2.7.0.dylib
