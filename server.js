@@ -1,4 +1,5 @@
-// index.js
+// server.js
+
 const express = require('express');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
@@ -9,41 +10,42 @@ dotenv.config();
 
 const app = express();
 
-// Middleware untuk parsing JSON body
+// Middleware for parsing JSON body
 app.use(bodyParser.json());
 
-// Load models from GCS
+// Load models from GCS when the server starts
 loadModel()
   .then(() => {
     console.log('Models loaded successfully');
   })
   .catch((err) => {
     console.error('Error loading models:', err);
+    process.exit(1); // Exit the process if model loading fails
   });
 
-// Rute untuk otentikasi
+// Routes for authentication and QA
 app.use('/api/auth', authRoutes);
 app.use('/api', qaRoutes);
 
-// Rute utama untuk memverifikasi server berjalan
+// Main route for verifying server is running
 app.get('/', (req, res) => {
   res.send('Hello, World!');
 });
 
-// Menangani error global di Express
+// Global error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  console.error('Global error handler:', err.stack);
+  res.status(500).json({ message: 'Something went wrong!', error: err.message });
 });
 
-// Menentukan port untuk server
+// Define the port for the server
 const PORT = process.env.PORT || 8080;
 
-// Menjalankan server
+// Start the server
 app.listen(PORT, (err) => {
   if (err) {
     console.error('Failed to start server:', err);
-    process.exit(1); // Keluar dengan status 1 jika ada error
+    process.exit(1); // Exit with status 1 if there is an error
   }
   console.log(`Server running on port ${PORT}`);
 });
