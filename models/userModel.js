@@ -1,4 +1,6 @@
 const db = require('../config/db'); // Your DB connection setup
+require('dotenv').config();
+
 
 // Create a new user
 const createUser = (name, email, password, callback) => {
@@ -43,16 +45,15 @@ const createUser = (name, email, password, callback) => {
 
 // Find user by email
 const findUserByEmail = (email, callback) => {
-  const query = 'SELECT id, name, email, photoUrl FROM users WHERE email = ?';
+  const query = 'SELECT * FROM users WHERE email = ?';
   db.query(query, [email], (err, result) => {
     if (err) {
       console.error('Error finding user:', err);
       return callback(err);
     }
-    callback(null, result[0]); // Return the first result, including photoUrl
+    callback(null, result[0]); // Return the first result
   });
 };
-
 
 // Update profile picture URL
 const updateUserProfilePicture = (userId, photoUrl, callback) => {

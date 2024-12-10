@@ -1,17 +1,27 @@
 // routes/qa.js
+
 const express = require('express');
 const router = express.Router();
 const { getAnswer } = require('../services/qaService');
-const tf = require('@tensorflow/tfjs-node');
+require('dotenv').config();
+
 
 router.post('/predict', async (req, res) => {
   try {
-    const { questionTensor } = req.body; // Asumsikan input dalam bentuk array
+    console.log('Request body:', req.body);
 
-    // Konversi input menjadi tensor
-    const inputTensor = tf.tensor(questionTensor);
+    const { questionTensor } = req.body;
 
-    const answer = await getAnswer(inputTensor);
+    if (!questionTensor) {
+      return res.status(400).json({ error: 'questionTensor is required' });
+    }
+
+    console.log('Received questionTensor:', questionTensor);
+
+    // Get the answer based on the input tensor
+    const answer = await getAnswer(questionTensor);
+    console.log('Generated answer:', answer);
+
     res.json({ answer });
   } catch (error) {
     console.error('Error processing request:', error);

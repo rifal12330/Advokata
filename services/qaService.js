@@ -1,29 +1,48 @@
-// services/qaService.js
 const tf = require('@tensorflow/tfjs-node');
-const { getModelBuffer } = require('./gcsService');
+const { downloadFileFromGCS } = require('../config/googleConfig');
 require('dotenv').config();
 
-let model = null; // Cache model agar tidak perlu di-load berulang kali
 
-async function loadModel() {
-  if (model) return model;
-
+// Function to load the TensorFlow Lite model from GCS
+const loadModel = async () => {
   try {
-    const modelBuffer = await getModelBuffer(process.env.MODEL_FILE_PATH);
-    model = await tf.loadGraphModel(tf.io.fromMemory(modelBuffer));
-    console.log('Model loaded successfully from memory');
+    const modelBuffer = await downloadFileFromGCS(process.env.MODEL_FILE_PATH);
+    const model = await tf.node.loadTFLiteModel(modelBuffer);
     return model;
   } catch (error) {
     console.error('Error loading model:', error);
-    throw error;
+    throw new Error('Failed to load model');
   }
-}
+};
 
-// Fungsi untuk mendapatkan jawaban
-async function getAnswer(inputTensor) {
+// Function to load tokenizer and embeddings from GCS
+const loadTokenizerAndEmbeddings = async () => {
+  try {
+    const tokenizerBuffer = await downloadFileFromGCS(process.env.TOKENIZER_FILE_PATH);
+    const embeddingsBuffer = await downloadFileFromGCS(process.env.EMBEDDINGS_FILE_PATH);
+    
+    const tokenizer = JSON.parse(tokenizerBuffer.toString());
+    const embeddings = JSON.parse(embeddingsBuffer.toString());
+
+    return { tokenizer, embeddings };
+  } catch (error) {
+    console.error('Error loading tokenizer and embeddings:', error);
+    throw new Error('Failed to load tokenizer and embeddings');
+  }
+};
+
+// Function to get an answer based on the input tensor
+const getAnswer = async (inputTensor) => {
   const model = await loadModel();
-  const prediction = model.predict(inputTensor);
-  return prediction.arraySync()[0];
-}
+  const { tokenizer, embeddings } = await loadTokenizerAndEmbeddings();
 
-module.exports = { getAnswer };
+  // Tokenize and match with embeddings
+  const tokenizedInput = tokenizer.encode(inputTensor); // Tokenize input
+  const inputEmbedding = embeddings[tokenizedInput]; // Match with embeddings
+
+  // Predict using the TFLite model
+  const prediction = await model.predict(inputEmbedding);
+  return prediction;
+};
+
+module.exports = { getAnswer, loadModel };

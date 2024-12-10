@@ -1,19 +1,25 @@
 // index.js
 const express = require('express');
-const path = require('path');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const authRoutes = require('./routes/authRoutes');
 const qaRoutes = require('./routes/qa');
- 
-
-// Menggunakan dotenv untuk memuat variabel lingkungan
+const { loadModel } = require('./services/qaService');
 dotenv.config();
 
 const app = express();
 
 // Middleware untuk parsing JSON body
 app.use(bodyParser.json());
+
+// Load models from GCS
+loadModel()
+  .then(() => {
+    console.log('Models loaded successfully');
+  })
+  .catch((err) => {
+    console.error('Error loading models:', err);
+  });
 
 // Rute untuk otentikasi
 app.use('/api/auth', authRoutes);
