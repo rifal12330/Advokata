@@ -1,4 +1,5 @@
 // services/qaService.js
+global.self = global;
 const tflite = require('@tensorflow/tfjs-tflite');
 const { downloadFileFromGCS } = require('../config/googleConfig');
 
