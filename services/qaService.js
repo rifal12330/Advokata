@@ -1,6 +1,6 @@
 // services/qaService.js
-global.self = global;
-const tflite = require('@tensorflow/tfjs-tflite');
+global.self = { location: { origin: '' } }; // Polyfill untuk self
+const tf = require('@tensorflow/tfjs-node');
 const { downloadFileFromGCS } = require('../config/googleConfig');
 
 let model;

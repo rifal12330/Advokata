@@ -1,12 +1,12 @@
 // server.js
-global.self = global;
+global.self = { location: { origin: '' } }; // Polyfill untuk self
 const express = require('express');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const authRoutes = require('./routes/authRoutes');
 const qaRoutes = require('./routes/qa');
 const { loadModel } = require('./services/qaService');
-const tflite = require('@tensorflow/tfjs-tflite');
+const tf = require('@tensorflow/tfjs-node');
 dotenv.config();
 
 const app = express();

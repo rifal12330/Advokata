@@ -1,6 +1,6 @@
 // routes/qa.js
 global.self = global;
-const tflite = require('@tensorflow/tfjs-tflite');
+const tf = require('@tensorflow/tfjs-node');
 const express = require('express');
 const router = express.Router();
 const { getAnswer } = require('../services/qaService');
