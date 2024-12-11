@@ -1,4 +1,5 @@
 // routes/qa.js
+global.self = global; // Polyfill untuk self
 
 const express = require('express');
 const router = express.Router();

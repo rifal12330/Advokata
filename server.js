@@ -1,4 +1,5 @@
 // app.js
+global.self = global; // Polyfill untuk self
 
 const express = require('express');
 const dotenv = require('dotenv');

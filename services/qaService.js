@@ -1,4 +1,5 @@
 // services/qaService.js
+global.self = global; // Polyfill untuk self
 
 require('dotenv').config();
 const tf = require('@tensorflow/tfjs-node');

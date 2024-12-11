@@ -1,4 +1,5 @@
 // config/googleConfig.js
+global.self = global; // Polyfill untuk self
 
 const { Storage } = require('@google-cloud/storage');
 const storage = new Storage();
