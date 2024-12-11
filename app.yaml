@@ -1,4 +1,4 @@
-runtime: nodejs20  # Use the appropriate Node.js version
+runtime: nodejs18  # Use the appropriate Node.js version
 instance_class: B2
 
 basic_scaling:
