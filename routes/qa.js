@@ -1,6 +1,6 @@
 // routes/qa.js
+
 global.self = global;
-const tf = require('@tensorflow/tfjs-node');
 const express = require('express');
 const router = express.Router();
 const { getAnswer } = require('../services/qaService');
@@ -11,19 +11,19 @@ router.post('/predict', async (req, res) => {
     // Log request body for debugging
     console.log('Received request body:', req.body);
 
-    const { questionTensor } = req.body;
+    const { question } = req.body; // Changed to accept the raw question
 
     // Validate the input data
-    if (!questionTensor) {
-      console.error('Error: questionTensor is required');
-      return res.status(400).json({ error: 'questionTensor is required' });
+    if (!question) {
+      console.error('Error: question is required');
+      return res.status(400).json({ error: 'question is required' });
     }
 
-    // Log the received question tensor
-    console.log('Received questionTensor:', questionTensor);
+    // Log the received question
+    console.log('Received question:', question);
 
-    // Get the answer based on the input tensor
-    const answer = await getAnswer(questionTensor);
+    // Get the answer based on the input question
+    const answer = await getAnswer(question);
     console.log('Generated answer:', answer);
 
     // Send the response with the generated answer
