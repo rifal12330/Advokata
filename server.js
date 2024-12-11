@@ -6,6 +6,8 @@ const bodyParser = require('body-parser');
 const authRoutes = require('./routes/authRoutes');
 const qaRoutes = require('./routes/qa');
 const { loadModel } = require('./services/qaService');
+const tflite = require('@tensorflow/tfjs-tflite');
+
 dotenv.config();
 
 const app = express();
