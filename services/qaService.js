@@ -1,48 +1,40 @@
-const tf = require('@tensorflow/tfjs-node');
+// services/qaService.js
+const tflite = require('@tensorflow/tfjs-tflite');
 const { downloadFileFromGCS } = require('../config/googleConfig');
-require('dotenv').config();
 
+let model;
 
-// Function to load the TensorFlow Lite model from GCS
 const loadModel = async () => {
   try {
-    const modelBuffer = await downloadFileFromGCS(process.env.MODEL_FILE_PATH);
-    const model = await tf.node.loadTFLiteModel(modelBuffer);
-    return model;
+    console.log('Downloading model from GCS...');
+    const localModelPath = await downloadFileFromGCS('advokata-model/qa_model.tflite'); // Replace with your actual GCS path
+    console.log('Model downloaded to:', localModelPath);
+
+    console.log('Loading model...');
+    model = await tflite.loadTFLiteModel(`file://${localModelPath}`);
+    console.log('Model loaded successfully');
   } catch (error) {
-    console.error('Error loading model:', error);
-    throw new Error('Failed to load model');
+    console.error('Error loading the model from GCS:', error);
+    throw new Error('Model loading failed');
   }
 };
 
-// Function to load tokenizer and embeddings from GCS
-const loadTokenizerAndEmbeddings = async () => {
+// Function to get the answer based on the input questionTensor
+const getAnswer = async (questionTensor) => {
+  if (!model) {
+    throw new Error('Model is not loaded yet');
+  }
+  // Here you would use the loaded model to make a prediction based on the input tensor
+  // This is just an example, adapt it according to your actual model
   try {
-    const tokenizerBuffer = await downloadFileFromGCS(process.env.TOKENIZER_FILE_PATH);
-    const embeddingsBuffer = await downloadFileFromGCS(process.env.EMBEDDINGS_FILE_PATH);
-    
-    const tokenizer = JSON.parse(tokenizerBuffer.toString());
-    const embeddings = JSON.parse(embeddingsBuffer.toString());
-
-    return { tokenizer, embeddings };
+    console.log('Generating answer for the given question tensor...');
+    // Assuming model is a function that generates an answer based on the tensor
+    const answer = await model.predict(questionTensor); // Adapt this line based on your actual model
+    return answer;
   } catch (error) {
-    console.error('Error loading tokenizer and embeddings:', error);
-    throw new Error('Failed to load tokenizer and embeddings');
+    console.error('Error during model prediction:', error);
+    throw new Error('Model prediction failed');
   }
 };
 
-// Function to get an answer based on the input tensor
-const getAnswer = async (inputTensor) => {
-  const model = await loadModel();
-  const { tokenizer, embeddings } = await loadTokenizerAndEmbeddings();
-
-  // Tokenize and match with embeddings
-  const tokenizedInput = tokenizer.encode(inputTensor); // Tokenize input
-  const inputEmbedding = embeddings[tokenizedInput]; // Match with embeddings
-
-  // Predict using the TFLite model
-  const prediction = await model.predict(inputEmbedding);
-  return prediction;
-};
-
-module.exports = { getAnswer, loadModel };
+module.exports = { loadModel, getAnswer };
