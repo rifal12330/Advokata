@@ -1,52 +1,49 @@
-// server.js
-global.self = { location: { origin: '' } }; // Polyfill untuk self
+// index.js
 const express = require('express');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const authRoutes = require('./routes/authRoutes');
 const qaRoutes = require('./routes/qa');
 const { loadModel } = require('./services/qaService');
-const tf = require('@tensorflow/tfjs-node');
 dotenv.config();
 
 const app = express();
 
-// Middleware for parsing JSON body
+// Middleware untuk parsing JSON body
 app.use(bodyParser.json());
 
-// Load models from GCS when the server starts
+// Load models from GCS
 loadModel()
   .then(() => {
     console.log('Models loaded successfully');
   })
   .catch((err) => {
     console.error('Error loading models:', err);
-    process.exit(1); // Exit the process if model loading fails
   });
 
-// Routes for authentication and QA
+// Rute untuk otentikasi
 app.use('/api/auth', authRoutes);
 app.use('/api', qaRoutes);
 
-// Main route for verifying server is running
+// Rute utama untuk memverifikasi server berjalan
 app.get('/', (req, res) => {
   res.send('Hello, World!');
 });
 
-// Global error handler
+// Menangani error global di Express
 app.use((err, req, res, next) => {
-  console.error('Global error handler:', err.stack);
-  res.status(500).json({ message: 'Something went wrong!', error: err.message });
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!' });
 });
 
-// Define the port for the server
+// Menentukan port untuk server
 const PORT = process.env.PORT || 8080;
 
-// Start the server
+// Menjalankan server
 app.listen(PORT, (err) => {
   if (err) {
     console.error('Failed to start server:', err);
-    process.exit(1); // Exit with status 1 if there is an error
+    process.exit(1); // Keluar dengan status 1 jika ada error
   }
   console.log(`Server running on port ${PORT}`);
 });
