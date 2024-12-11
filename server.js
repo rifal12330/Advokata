@@ -3,8 +3,6 @@ const express = require('express');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const authRoutes = require('./routes/authRoutes');
-const qaRoutes = require('./routes/qa');
-const { loadModel } = require('./services/qaService');
 dotenv.config();
 
 const app = express();
@@ -12,18 +10,9 @@ const app = express();
 // Middleware untuk parsing JSON body
 app.use(bodyParser.json());
 
-// Load models from GCS
-loadModel()
-  .then(() => {
-    console.log('Models loaded successfully');
-  })
-  .catch((err) => {
-    console.error('Error loading models:', err);
-  });
 
 // Rute untuk otentikasi
 app.use('/api/auth', authRoutes);
-app.use('/api', qaRoutes);
 
 // Rute utama untuk memverifikasi server berjalan
 app.get('/', (req, res) => {
