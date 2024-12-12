@@ -3,8 +3,8 @@ global.self = global; // Polyfill untuk self
 require('dotenv').config();
 const tf = require('@tensorflow/tfjs-node');
 const { downloadFileFromGCS, db } = require('../config/googleConfig');
-const tflite = require('@tensorflow/tfjs-tflite');
 const fs = require('fs');
+const admin = require('firebase-admin');
 
 // Variabel untuk menyimpan path model dan file lainnya
 const modelFilePath = process.env.MODEL_FILE_PATH;
@@ -47,7 +47,7 @@ const loadModel = async () => {
     console.log('Model downloaded to:', localModelPath);
 
     console.log('Loading model...');
-    model = await tflite.loadTFLiteModel(`file://${localModelPath}`);
+    model = await tf.loadLayersModel(`file://${localModelPath}`);
     console.log('Model loaded successfully');
 
     // Muat tokenizer dan embeddings
@@ -62,7 +62,7 @@ const loadModel = async () => {
 // Fungsi untuk men-tokenize pertanyaan
 const tokenizeQuestion = (question) => {
   const tokens = question.split(' ').map((word) => tokenizer[word] || 0);
-  return tf.tensor(tokens);
+  return tf.tensor([tokens]); // Tambahkan batch dimensi
 };
 
 // Fungsi untuk mencari konteks berdasarkan embeddings
@@ -71,7 +71,7 @@ const searchContext = (tokenizedQuestion) => {
   let maxSimilarity = -Infinity;
 
   embeddings.forEach((embedding, idx) => {
-    const similarity = tf.matMul(tokenizedQuestion, tf.tensor(embedding)).dataSync()[0];
+    const similarity = tf.matMul(tokenizedQuestion, tf.tensor([embedding])).dataSync()[0];
     if (similarity > maxSimilarity) {
       maxSimilarity = similarity;
       bestMatch = idx;
@@ -106,11 +106,12 @@ const getAnswer = async (question) => {
     const context = searchContext(tokenizedQuestion);
 
     // Gabungkan token pertanyaan dengan konteks untuk prediksi
-    const inputTensor = tf.concat([tokenizedQuestion, tf.tensor(context)], 0);
+    const inputTensor = tf.concat([tokenizedQuestion, tf.tensor([context])], 1);
 
     // Prediksi jawaban
-    const answer = await model.predict(inputTensor);
-    const answerText = answer.dataSync().toString();
+    const prediction = model.predict(inputTensor);
+    const answerData = prediction.dataSync();
+    const answerText = answerData.toString();
 
     // Simpan pertanyaan dan jawaban ke Firestore
     await saveToFirestore(question, answerText);
