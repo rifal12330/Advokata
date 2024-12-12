@@ -1,10 +1,20 @@
-// config/googleConfig.js
 global.self = global; // Polyfill untuk self
 
 const { Storage } = require('@google-cloud/storage');
+const admin = require('firebase-admin');
+require('dotenv').config();
+
 const storage = new Storage();
 const bucketName = process.env.GCS_BUCKET_NAME; // Use the bucket name from .env
-require('dotenv').config();
+
+// Inisialisasi Firestore
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+  });
+}
+
+const db = admin.firestore();
 
 // Function to download file from GCS
 const downloadFileFromGCS = async (fileName) => {
@@ -20,4 +30,4 @@ const downloadFileFromGCS = async (fileName) => {
   }
 };
 
-module.exports = { downloadFileFromGCS };
+module.exports = { downloadFileFromGCS, db };

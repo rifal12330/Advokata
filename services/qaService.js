@@ -1,9 +1,8 @@
-// services/qaService.js
 global.self = global; // Polyfill untuk self
 
 require('dotenv').config();
 const tf = require('@tensorflow/tfjs-node');
-const { downloadFileFromGCS } = require('../config/googleConfig');
+const { downloadFileFromGCS, db } = require('../config/googleConfig');
 const tflite = require('@tensorflow/tfjs-tflite');
 const fs = require('fs');
 
@@ -82,6 +81,20 @@ const searchContext = (tokenizedQuestion) => {
   return embeddings[bestMatch];
 };
 
+// Fungsi untuk menyimpan pertanyaan dan jawaban ke Firestore
+const saveToFirestore = async (question, answer) => {
+  try {
+    await db.collection('qa_logs').add({
+      question,
+      answer,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    console.log('Saved to Firestore successfully');
+  } catch (error) {
+    console.error('Error saving to Firestore:', error);
+  }
+};
+
 // Fungsi untuk mendapatkan jawaban berdasarkan pertanyaan
 const getAnswer = async (question) => {
   if (!model) {
@@ -97,7 +110,12 @@ const getAnswer = async (question) => {
 
     // Prediksi jawaban
     const answer = await model.predict(inputTensor);
-    return answer.dataSync();
+    const answerText = answer.dataSync().toString();
+
+    // Simpan pertanyaan dan jawaban ke Firestore
+    await saveToFirestore(question, answerText);
+
+    return answerText;
   } catch (error) {
     console.error('Error during model prediction:', error);
     throw new Error('Model prediction failed');
