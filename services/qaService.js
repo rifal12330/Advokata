@@ -1,4 +1,4 @@
-global.self = global; // Polyfill untuk self
+global.self = global; 
 
 require('dotenv').config();
 const tf = require('@tensorflow/tfjs-node');
@@ -11,9 +11,6 @@ let model;
 let tokenizer;
 let embeddings;
 
-/**
- * Fungsi untuk memuat tokenizer dari file yang diunduh dari GCS.
- */
 const loadTokenizer = async () => {
   try {
     const localTokenizerPath = await downloadTokenizerFileFromGCS('advokata-model/tokenizer/tokenizer.json');
@@ -28,9 +25,7 @@ const loadTokenizer = async () => {
   }
 };
 
-/**
- * Fungsi untuk memuat embeddings dari file yang diunduh dari GCS.
- */
+
 const loadEmbeddings = async () => {
   try {
     console.log('Downloading embeddings from GCS...');
@@ -47,9 +42,6 @@ const loadEmbeddings = async () => {
   }
 };
 
-/**
- * Fungsi untuk memuat model dari GCS.
- */
 const loadModel = async () => {
   try {
     console.log('Downloading model from GCS...');
@@ -57,7 +49,6 @@ const loadModel = async () => {
     const localModelJsonPath = await downloadModelFilesFromGCS('advokata-model/tfjs-model');
     console.log('Model JSON downloaded to:', localModelJsonPath);
 
-    // Pastikan model JSON berada di tempat yang benar bersama shard-nya (misalnya model-shard2)
     const modelUrl = `file://${localModelJsonPath}`;
     model = await tf.loadGraphModel(modelUrl);
     console.log('Model loaded successfully');
@@ -68,9 +59,7 @@ const loadModel = async () => {
   }
 };
 
-/**
- * Fungsi untuk men-tokenize pertanyaan.
- */
+
 const tokenizeQuestion = (question) => {
   console.log('Original Question:', question);
 
@@ -80,14 +69,12 @@ const tokenizeQuestion = (question) => {
     return token;
   });
 
-  // Pastikan panjang tensor tokenisasi sesuai dengan embedding yang diharapkan
-  const tokenTensor = tf.tensor2d([tokens], [1, tokens.length], 'int32'); // Pastikan tensor bertipe int32
+  const tokenTensor = tf.tensor2d([tokens], [1, tokens.length], 'int32'); 
 
-  // Jika dimensi token terlalu kecil, tambahkan padding
-  const desiredLength = 768; // Sesuaikan dengan panjang embedding yang Anda inginkan
+  const desiredLength = 768; 
   if (tokenTensor.shape[1] < desiredLength) {
-    const padding = tf.zeros([1, desiredLength - tokenTensor.shape[1]], 'int32'); // Padding dalam bentuk int32
-    tokenTensor.concat(padding, 1); // Padding di bagian akhir tensor
+    const padding = tf.zeros([1, desiredLength - tokenTensor.shape[1]], 'int32');
+    tokenTensor.concat(padding, 1);
   }
 
   console.log('Tokenized Question (Tensor):', tokenTensor.toString());
@@ -96,31 +83,29 @@ const tokenizeQuestion = (question) => {
 };
 
 
-/**
- * Fungsi untuk menghitung cosine similarity.
- */
 const calculateCosineSimilarity = async (a, b) => {
   try {
     const a1D = a.squeeze();
     const b1D = b.squeeze();
 
-    // Padding agar kedua tensor memiliki panjang yang sama
     const maxLength = Math.max(a1D.shape[0], b1D.shape[0]);
-    const paddedA = tf.pad(a1D, [[0, maxLength - a1D.shape[0]]]);
-    const paddedB = tf.pad(b1D, [[0, maxLength - b1D.shape[0]]]);
+    let paddedA = tf.pad(a1D, [[0, maxLength - a1D.shape[0]]]).toFloat();
+    let paddedB = tf.pad(b1D, [[0, maxLength - b1D.shape[0]]]).toFloat();
 
     console.log('Padded A Shape:', paddedA.shape);
     console.log('Padded B Shape:', paddedB.shape);
 
-    // Hitung dot product dan norma dari kedua tensor
     const dotProduct = await paddedA.dot(paddedB).data();
     const normA = await paddedA.norm().data();
     const normB = await paddedB.norm().data();
 
-    // Hitung cosine similarity
+    if (normA[0] === 0 || normB[0] === 0) {
+      console.warn('One of the vectors has zero norm. Returning similarity as 0.');
+      return 0;
+    }
+
     const similarity = dotProduct[0] / (normA[0] * normB[0]);
 
-    // Buang tensor untuk menghindari memory leak
     tf.dispose([a1D, b1D, paddedA, paddedB]);
 
     return similarity;
@@ -130,9 +115,9 @@ const calculateCosineSimilarity = async (a, b) => {
   }
 };
 
-/**
- * Fungsi untuk mencari konteks yang relevan berdasarkan token pertanyaan.
- */
+
+
+
 const searchContext = async (tokenizedQuestion) => {
   try {
     console.log('Searching for context for tokenized question:', tokenizedQuestion);
@@ -188,9 +173,7 @@ const searchContext = async (tokenizedQuestion) => {
 
 
 
-/**
- * Fungsi untuk menyimpan pertanyaan dan jawaban ke Firestore.
- */
+
 const saveToFirestore = async (question, answer) => {
   try {
     await db.collection('qa_logs').add({
@@ -204,9 +187,7 @@ const saveToFirestore = async (question, answer) => {
   }
 };
 
-/**
- * Fungsi untuk mendapatkan jawaban dari model berdasarkan pertanyaan.
- */
+
 const getAnswer = async (question) => {
   if (!model) {
     throw new Error('Model is not loaded yet');
@@ -217,48 +198,68 @@ const getAnswer = async (question) => {
   }
 
   try {
-    // Tokenisasi pertanyaan
+    // Tokenize the question
     const tokenizedQuestion = tokenizeQuestion(question);
     console.log('Tokenized Question:', tokenizedQuestion);
 
-    // Mencari konteks yang relevan
+    // Search for relevant context
     const context = await searchContext(tokenizedQuestion);
     console.log('Context:', context);
 
-    // Tokenisasi konteks
+    if (!context) {
+      throw new Error('No relevant context found');
+    }
+
+    // Tokenize the context
     const tokenizedContext = tokenizeQuestion(context);
     console.log('Tokenized Context:', tokenizedContext);
 
-    // Tentukan panjang maksimum yang didukung oleh model, misalnya 512
+    // Define maximum length supported by the model
     const maxLength = 512;
 
-    // Potong tokenizedQuestion dan tokenizedContext agar tidak melebihi panjang maksimum
-    const truncatedTokenizedQuestion = truncateTensorToLength(tokenizedQuestion, maxLength);
-    const truncatedTokenizedContext = truncateTensorToLength(tokenizedContext, maxLength);
+    // Truncate question and context tokens if they exceed max length
+    // In your `getAnswer` function, use this truncation method
+    const truncatedTokenizedQuestion = truncateTensorToLength(tokenizedQuestion, 33);  // Padding/truncating to 33 tokens
+    const truncatedTokenizedContext = truncateTensorToLength(tokenizedContext, 33);    // Padding/truncating to 33 tokens
 
-    // Membuat attention mask (1 untuk token yang valid, 0 untuk padding)
-    const attentionMask = tf.ones([1, truncatedTokenizedQuestion.shape[1]], 'int32');
-    const tokenTypeIds = tf.zeros([1, truncatedTokenizedQuestion.shape[1]], 'int32');
 
-    // Persiapkan input tensor
+    // Calculate the maximum length of both the question and context
+    const inputLength = Math.max(
+      truncatedTokenizedQuestion.shape[1],
+      truncatedTokenizedContext.shape[1]
+    );
+
+    // Create attention mask and token type IDs with the appropriate input length
+    const attentionMask = tf.ones([1, inputLength], 'int32');
+    const tokenTypeIds = tf.zeros([1, inputLength], 'int32');
+
+    // Prepare the input tensor for the model
     const inputTensor = {
-      'input_ids': truncatedTokenizedQuestion,  // Tokenized question yang sudah dipotong
-      'attention_mask:0': attentionMask,       // Attention mask
-      'token_type_ids': tokenTypeIds           // Token type IDs
+      'input_ids': truncatedTokenizedQuestion,
+      'attention_mask': attentionMask,
+      'token_type_ids': tokenTypeIds
     };
 
     console.log('Input Tensor:', inputTensor);
 
-    // Prediksi menggunakan model
+    // Make the prediction using the model
     const prediction = await model.execute(inputTensor);
 
-    // Mengonversi hasil prediksi ke array (mengganti .data() dengan .array())
-    const answerData = await prediction.array();
-    const answerText = answerData.toString();
+    // Ensure prediction is a Tensor
+    if (!(prediction instanceof tf.Tensor)) {
+      console.error('Prediction is not a Tensor:', prediction);
+      throw new Error('Prediction is not a Tensor');
+    }
 
+    // Retrieve the output from the prediction tensor
+    const answerData = await prediction.array();
+    console.log('Prediction Output:', answerData);
+
+    // Convert the answer data to a string (assuming it's a tokenized answer)
+    const answerText = answerData.join(' ').trim(); // Join array elements into a string
     console.log('Answer:', answerText);
 
-    // Simpan pertanyaan dan jawaban ke Firestore
+    // Save the question and answer to Firestore
     await saveToFirestore(question, answerText);
 
     return answerText;
@@ -268,14 +269,20 @@ const getAnswer = async (question) => {
   }
 };
 
-// Fungsi untuk memotong tensor ke panjang yang diinginkan (maxLength)
+
+
 const truncateTensorToLength = (tensor, maxLength) => {
   const currentLength = tensor.shape[1];
   if (currentLength > maxLength) {
-    tensor = tensor.slice([0, 0], [1, maxLength]);  // Potong tensor agar panjangnya sesuai
+    tensor = tensor.slice([0, 0], [1, maxLength]);  // Truncate tensor if too long
+  } else if (currentLength < maxLength) {
+    const padding = tf.zeros([1, maxLength - currentLength], 'int32');
+    tensor = tensor.concat(padding, 1);  // Pad tensor if too short
   }
   return tensor;
 };
+
+
 
 
 
