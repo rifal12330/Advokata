@@ -5,7 +5,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const qaRoutes = require('./routes/qa');
-const { loadModel } = require('./services/qaService');
+const { loadModel, loadTokenizer, loadEmbeddings } = require('./services/qaService'); // Pastikan semua fungsi dipanggil
 dotenv.config();
 
 const app = express();
@@ -13,10 +13,16 @@ const app = express();
 // Middleware untuk parsing JSON body
 app.use(bodyParser.json());
 
-// Tunggu model selesai dimuat sebelum menjalankan server
-loadModel()
-  .then(() => {
-    console.log('Model loaded successfully');
+// Tunggu model, tokenizer, dan embeddings selesai dimuat sebelum menjalankan server
+const initializeApp = async () => {
+  try {
+    console.log('Memuat model...');
+    // Muat model, tokenizer, dan embeddings secara berurutan
+    await loadTokenizer();
+    await loadEmbeddings();
+    await loadModel();
+
+    console.log('Model, Tokenizer, dan Embeddings dimuat dengan sukses.');
 
     // Gunakan route untuk QA
     app.use('/api', qaRoutes);
@@ -39,8 +45,11 @@ loadModel()
     });
 
     server.setTimeout(300000); // Set timeout ke 5 menit (300000 ms)
-  })
-  .catch((err) => {
-    console.error('Error loading model:', err);
-    process.exit(1); // Keluar jika gagal memuat model
-  });
+  } catch (err) {
+    console.error('Terjadi kesalahan saat memuat komponen:', err);
+    process.exit(1); // Keluar jika terjadi kesalahan dalam memuat komponen
+  }
+};
+
+// Jalankan inisialisasi aplikasi
+initializeApp();
